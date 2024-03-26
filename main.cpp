@@ -48,7 +48,7 @@ void setup() {
     Serial.print(temp1);
 
     // actual relay control
-    controlRelay(PIN1, thermocouple1.readCelsius());
+    controlRelay(PIN1, temp1);
   });
 
   thermocouple2Thread.onRun([] {
@@ -60,7 +60,7 @@ void setup() {
     Serial.print(temp2);
 
     // actual relay control
-    controlRelay(PIN2, thermocouple2.readCelsius());
+    controlRelay(PIN2, temp2);
   });
 
   thermocouple1Thread.setInterval(LOOP_DELAY);
@@ -78,6 +78,7 @@ void loop() {
 }
 
 void controlRelay(int pin, float temperature, ) {
+  // need a bit of piloting
   if (temperature >= MINIMUM_TRIGGER_TEMP && temperature <= (MAXIMUM_TRIGGER_TEMP - 0.1)) {
     digitalWrite(pin, HIGH);
     delay(CONTROL_RELAY_QUICK_DELAY);
@@ -87,6 +88,7 @@ void controlRelay(int pin, float temperature, ) {
     return
   }
 
+  // need a lot of piloting
   if (temperature >= MAXIMUM_TRIGGER_TEMP) {
     digitalWrite(pin, HIGH);
     delay(CONTROL_RELAY_QUICK_DELAY);
