@@ -1,9 +1,16 @@
 #include "max6675.h"
 
 // constants
-const int SETUP_DELAY = 3000
-const int LOOP_DELAY = 1000
 const int SPEED = 9600
+
+const int SETUP_DELAY = 3000
+const int LOOP_DELAY = 0
+const int CONTROL_RELAY_NO_ACTION_DELAY = 1000
+const int CONTROL_RELAY_QUICK_DELAY = 50
+const int CONTROL_RELAY_SLOW_DELAY = 100
+
+const float MINIMUM_TRIGGER_TEMP = 50.0
+const float MAXIMUM_TRIGGER_TEMP = 100.0
 
 // pins for first thermocouple
 const int PIN1 = 11
@@ -51,25 +58,26 @@ void loop() {
 }
 
 void controlRelay(int pin, float temperature) {
-  if () {
+  if (temperature >= MINIMUM_TRIGGER_TEMP && temperature <= (MAXIMUM_TRIGGER_TEMP - 0.1)) {
+    digitalWrite(pin, HIGH);
+    delay(CONTROL_RELAY_QUICK_DELAY);
+
+    digitalWrite(pin, LOW);
+    delay(CONTROL_RELAY_SLOW_DELAY);
     return
   }
 
-  // default behaviour
+  if (temperature >= MAXIMUM_TRIGGER_TEMP) {
+    digitalWrite(pin, HIGH);
+    delay(CONTROL_RELAY_QUICK_DELAY);
+
+    digitalWrite(pin, LOW);
+    delay(CONTROL_RELAY_QUICK_DELAY);
+    return
+  }
+
+  // default behaviour - No piloting
   digitalWrite(pin, LOW);
-
-
-  // if (temperature > 50.0 && temperature < 149.9) {
-  //   digitalWrite(pin, LOW);
-  // } else if (temperature > 150.0 && temperature < 200.0) {
-  //   digitalWrite(pin, LOW);
-  //   delay(25);
-  //   digitalWrite(pin, HIGH);
-  //   delay(25);
-  // } else {
-  //   digitalWrite(pin, HIGH);
-  //   delay(50);
-  //   digitalWrite(pin, LOW);
-  //   delay(50);
-  // }
+  delay(CONTROL_RELAY_NO_ACTION_DELAY);
+  return
 }
