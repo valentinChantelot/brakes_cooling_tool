@@ -1,3 +1,4 @@
+#include <ArduinoThread.h>
 #include "max6675.h"
 
 // constants
@@ -28,36 +29,55 @@ int sck2Pin = 5;
 MAX6675 thermocouple1(sck1Pin, cs1Pin, so1Pin);
 MAX6675 thermocouple2(sck2Pin, cs2Pin, so2Pin);
 
+// init thermocouples thread (so the code for both is executed in parallel)
+Thread thermocouple1Thread;
+Thread thermocouple2Thread;
+
 void setup() {
   Serial.begin(SPEED);
+
   pinMode(PIN1, OUTPUT);
   pinMode(PIN2, OUTPUT);
+
+  thermocouple1Thread.onRun([] {
+    // read temperatures
+    float temp1 = thermocouple1.readCelsius();
+
+    // log temparatures
+    Serial.print("Temp_1 = "); 
+    Serial.print(temp1);
+
+    // actual relay control
+    controlRelay(PIN1, thermocouple1.readCelsius());
+  });
+
+  thermocouple2Thread.onRun([] {
+    // read temperatures
+    float temp2 = thermocouple2.readCelsius();
+    
+    // log temparatures
+    Serial.print("Temp_2 = "); 
+    Serial.print(temp2);
+
+    // actual relay control
+    controlRelay(PIN2, thermocouple2.readCelsius());
+  });
+
+  thermocouple1Thread.setInterval(LOOP_DELAY);
+  thermocouple2Thread.setInterval(LOOP_DELAY);
+
+  thermocouple1Thread.setNow();
+  thermocouple2Thread.setNow();
+
   delay(SETUP_DELAY);
 }
 
 void loop() {
-  // read temperatures
-  float temp1 = thermocouple1.readCelsius();
-  float temp2 = thermocouple2.readCelsius();
-
-  // log temparatures
-  Serial.print("Temp_1 = "); 
-  Serial.print(temp1);
-
-  Serial.print("Temp_2 = "); 
-  Serial.print(temp2);
-
-  // first thermocouple relay control
-  controlRelay(PIN1, temp1);
-
-  // second thermocouple relay control
-  controlRelay(PIN2, temp2);
-
-  // wait until next execution
-  delay(LOOP_DELAY);
+  myThread1.run();
+  myThread2.run();
 }
 
-void controlRelay(int pin, float temperature) {
+void controlRelay(int pin, float temperature, ) {
   if (temperature >= MINIMUM_TRIGGER_TEMP && temperature <= (MAXIMUM_TRIGGER_TEMP - 0.1)) {
     digitalWrite(pin, HIGH);
     delay(CONTROL_RELAY_QUICK_DELAY);
