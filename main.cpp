@@ -1,26 +1,15 @@
 #include <ArduinoThread.h>
 #include "max6675.h"
-
-// constants
-const int SPEED = 9600
-
-const int SETUP_DELAY = 3000
-const int LOOP_DELAY = 0
-const int CONTROL_RELAY_NO_ACTION_DELAY = 1000
-const int CONTROL_RELAY_QUICK_DELAY = 50
-const int CONTROL_RELAY_SLOW_DELAY = 100
-
-const float MINIMUM_TRIGGER_TEMP = 50.0
-const float MAXIMUM_TRIGGER_TEMP = 100.0
+#include "constants.h" 
 
 // pins for first thermocouple
-const int PIN1 = 11
+const int PIN1 = 11;
 int so1Pin = 22;
 int cs1Pin = 2;
 int sck1Pin = 3;
 
 // pins for 2nd thermocouple
-const int PIN2 = 10
+const int PIN2 = 10;
 int so2Pin = 24;
 int cs2Pin = 4;
 int sck2Pin = 5;
@@ -43,8 +32,8 @@ void setup() {
     // read temperatures
     float temp1 = thermocouple1.readCelsius();
 
-    // log temparatures
-    Serial.print("Temp_1 = "); 
+    // log temperatures
+    Serial.print("Temp_1 = ");
     Serial.print(temp1);
 
     // actual relay control
@@ -55,7 +44,7 @@ void setup() {
     // read temperatures
     float temp2 = thermocouple2.readCelsius();
     
-    // log temparatures
+    // log temperatures
     Serial.print("Temp_2 = "); 
     Serial.print(temp2);
 
@@ -73,11 +62,11 @@ void setup() {
 }
 
 void loop() {
-  myThread1.run();
-  myThread2.run();
+  thermocouple1Thread.run();
+  thermocouple2Thread.run();
 }
 
-void controlRelay(int pin, float temperature, ) {
+void controlRelay(int pin, float temperature) {
   // need a bit of piloting
   if (temperature >= MINIMUM_TRIGGER_TEMP && temperature <= (MAXIMUM_TRIGGER_TEMP - 0.1)) {
     digitalWrite(pin, HIGH);
@@ -85,7 +74,7 @@ void controlRelay(int pin, float temperature, ) {
 
     digitalWrite(pin, LOW);
     delay(CONTROL_RELAY_SLOW_DELAY);
-    return
+    return;
   }
 
   // need a lot of piloting
@@ -95,11 +84,11 @@ void controlRelay(int pin, float temperature, ) {
 
     digitalWrite(pin, LOW);
     delay(CONTROL_RELAY_QUICK_DELAY);
-    return
+    return;
   }
 
   // default behaviour - No piloting
   digitalWrite(pin, LOW);
   delay(CONTROL_RELAY_NO_ACTION_DELAY);
-  return
+  return;
 }
