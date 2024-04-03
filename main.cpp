@@ -1,5 +1,13 @@
-#include <ArduinoThread.h>
-#include "max6675.h"
+#include <MAX6675.h>
+#include <Thread.h>
+/**
+ * From library ArduinoThread by Ivan Seidel
+ * To install it. Go here : https://github.com/ivanseidel/ArduinoThread/archive/master.zip
+ * It will download a zip file
+ * From Arduino IDE, Sketch > Include Library > Add .ZIP library
+ * Select the downloaded zip file, then Sketch > Include Library > ArduinoThread to add it to the file
+ * Remove StaticThreadController and ThreadController, we do not need these files
+ */
 
 // constants
 const int SPEED = 9600;
@@ -16,16 +24,16 @@ const float MINIMUM_TRIGGER_TEMP = 50.0;
 const float MAXIMUM_TRIGGER_TEMP = 100.0;
 
 // pins for first thermocouple
-const int PIN1 = 11;
-const int SO1_PIN = 22;
-const int CS1_PIN = 2;
-const int SCK1_PIN = 3;
+int PIN_1 = 11;
+int SO1_PIN = 22;
+int CS1_PIN = 2;
+int SCK1_PIN = 3;
 
-// pins for 2nd thermocouple
-const int PIN2 = 10;
-const int SO2_PIN = 24;
-const int CS2_PIN = 4;
-const int SCK2_PIN = 5;
+// // pins for 2nd thermocouple
+int PIN_2 = 10;
+int SO2_PIN = 24;
+int CS2_PIN = 4;
+int SCK2_PIN = 5;
 
 // init thermocouples
 MAX6675 thermocouple1(SCK1_PIN, CS1_PIN, SO1_PIN);
@@ -43,39 +51,33 @@ void setup()
 {
   Serial.begin(SPEED);
 
-  pinMode(PIN1, OUTPUT);
-  pinMode(PIN2, OUTPUT);
+  pinMode(PIN_1, OUTPUT);
+  pinMode(PIN_2, OUTPUT);
 
+  // thread logic for 1rst thermocouple control
   thermocouple1Thread.onRun([]
-                            {
-    // read temperatures
-    float temp1 = thermocouple1.readCelsius();
-    // actual relay control
-    controlRelay(PIN1, temp1); });
+    {
+    float temp1 = thermocouple1.getTemperature();
+    controlRelay(PIN_1, temp1); 
+    });
 
+  // thread logic for 2nd thermocouple control
   thermocouple2Thread.onRun([]
                             {
-    // read temperatures
-    float temp2 = thermocouple2.readCelsius();
+    float temp2 = thermocouple2.getTemperature();
+    controlRelay(PIN_2, temp2); });
 
-    // actual relay control
-    controlRelay(PIN2, temp2); });
-
+  // thread logic for 1rst thermocouple logs
   log_thermocouple1Thread.onRun([]
                                 {
-    // read temperatures
-    float temp1 = thermocouple1.readCelsius();
-
-    // log temperatures
+    float temp1 = thermocouple1.getTemperature();
     Serial.print("Temp_1 = ");
     Serial.print(temp1); });
 
+  // thread logic for 2nd thermocouple logs
   log_thermocouple2Thread.onRun([]
                                 {
-    // read temperatures
-    float temp2 = thermocouple2.readCelsius();
-    
-    // log temperatures
+    float temp2 = thermocouple2.getTemperature();
     Serial.print("Temp_2 = "); 
     Serial.print(temp2); });
 
@@ -84,12 +86,6 @@ void setup()
 
   log_thermocouple1Thread.setInterval(LOOP_LOG_DELAY);
   log_thermocouple2Thread.setInterval(LOOP_LOG_DELAY);
-
-  thermocouple1Thread.setNow();
-  thermocouple2Thread.setNow();
-
-  log_thermocouple1Thread.setNow();
-  log_thermocouple2Thread.setNow();
 
   delay(SETUP_DELAY);
 }
@@ -117,6 +113,17 @@ void controlRelay(int pin, float temperature)
   }
 
   // need a lot of piloting
+  if (temperature >= MAXIMUM_TRIGGER_TEMP)
+  {
+    digitalWrite(pin, HIGH);
+    delay(CONTROL_RELAY_QUICK_DELAY);
+
+    digitalWrite(pin, LOW);
+    delay(CONTROL_RELAY_QUICK_DELAY);
+    return;
+  }
+  
+  // brakes watering opened until next check
   if (temperature >= MAXIMUM_TRIGGER_TEMP)
   {
     digitalWrite(pin, HIGH);
