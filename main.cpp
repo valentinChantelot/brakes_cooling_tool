@@ -109,13 +109,15 @@ void controlRelay(int pin, float temperature)
   // need a bit of piloting
   if (temperature >= MINIMUM_TRIGGER_TEMP && temperature <= (MAXIMUM_TRIGGER_TEMP - 0.1))
   {
-    smallActionOnBrakesTemperature(pin) return;
+    maintainBrakesTemperature(pin);
+    return;
   }
 
   // need a lot of piloting
   if (temperature >= MAXIMUM_TRIGGER_TEMP)
   {
-    bigActionOnBrakesTemperature(pin) return;
+    reduceBrakesTemperature(pin);
+    return;
   }
 
   // default behaviour - No piloting
