@@ -17,8 +17,14 @@ const int LOOP_CONTROL_DELAY = 0; // How many time (in ms) between each controlR
 const int LOOP_LOG_DELAY = 1000;  // How many time (in ms) between each log ?
 
 const int CONTROL_RELAY_NO_ACTION_DELAY = 1000;
-const int CONTROL_RELAY_QUICK_DELAY = 50;
-const int CONTROL_RELAY_SLOW_DELAY = 100;
+
+const int MAINTAIN_TEMP_HIGH_DELAY = 500;
+const int MAINTAIN_TEMP_LOW_DELAY = 1000;
+const int MAINTAIN_TEMP_NUMBER_OF_ITERATION = 10;
+
+const int REDUCE_TEMP_HIGH_DELAY = 1000;
+const int REDUCE_TEMP_LOW_DELAY = 300;
+const int REDUCE_TEMP_NUMBER_OF_ITERATION = 10;
 
 const float MINIMUM_TRIGGER_TEMP = 50.0;
 const float MAXIMUM_TRIGGER_TEMP = 100.0;
@@ -56,10 +62,9 @@ void setup()
 
   // thread logic for 1rst thermocouple control
   thermocouple1Thread.onRun([]
-    {
+                            {
     float temp1 = thermocouple1.getTemperature();
-    controlRelay(PIN_1, temp1); 
-    });
+    controlRelay(PIN_1, temp1); });
 
   // thread logic for 2nd thermocouple control
   thermocouple2Thread.onRun([]
@@ -104,38 +109,50 @@ void controlRelay(int pin, float temperature)
   // need a bit of piloting
   if (temperature >= MINIMUM_TRIGGER_TEMP && temperature <= (MAXIMUM_TRIGGER_TEMP - 0.1))
   {
-    digitalWrite(pin, HIGH);
-    delay(CONTROL_RELAY_QUICK_DELAY);
-
-    digitalWrite(pin, LOW);
-    delay(CONTROL_RELAY_SLOW_DELAY);
-    return;
+    smallActionOnBrakesTemperature(pin) return;
   }
 
   // need a lot of piloting
   if (temperature >= MAXIMUM_TRIGGER_TEMP)
   {
-    digitalWrite(pin, HIGH);
-    delay(CONTROL_RELAY_QUICK_DELAY);
-
-    digitalWrite(pin, LOW);
-    delay(CONTROL_RELAY_QUICK_DELAY);
-    return;
-  }
-  
-  // brakes watering opened until next check
-  if (temperature >= MAXIMUM_TRIGGER_TEMP)
-  {
-    digitalWrite(pin, HIGH);
-    delay(CONTROL_RELAY_QUICK_DELAY);
-
-    digitalWrite(pin, LOW);
-    delay(CONTROL_RELAY_QUICK_DELAY);
-    return;
+    bigActionOnBrakesTemperature(pin) return;
   }
 
   // default behaviour - No piloting
+  noActionOnBrakesTemperature(pin);
+  return;
+}
+
+void noActionOnBrakesTemperature(int pin)
+{
   digitalWrite(pin, LOW);
   delay(CONTROL_RELAY_NO_ACTION_DELAY);
+}
+
+void maintainBrakesTemperature(int pin)
+{
+  for (int i = 0; i < MAINTAIN_TEMP_NUMBER_OF_ITERATION; ++i)
+  {
+    digitalWrite(pin, HIGH);
+    delay(MAINTAIN_TEMP_HIGH_DELAY);
+
+    digitalWrite(pin, LOW);
+    delay(MAINTAIN_TEMP_LOW_DELAY);
+  }
+
+  return;
+}
+
+void reduceBrakesTemperature(int pin)
+{
+  for (int i = 0; i < REDUCE_TEMP_NUMBER_OF_ITERATION; ++i)
+  {
+    digitalWrite(pin, HIGH);
+    delay(REDUCE_TEMP_HIGH_DELAY);
+
+    digitalWrite(pin, LOW);
+    delay(REDUCE_TEMP_LOW_DELAY);
+  }
+
   return;
 }
