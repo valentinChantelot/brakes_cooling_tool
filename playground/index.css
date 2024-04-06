@@ -27,6 +27,11 @@ main {
   padding: var(--spacing-x-large) var(--spacing-large);
 }
 
+aside {
+  display: flex;
+  flex-direction: column;
+}
+
 h1 {
   margin: 0 0 var(--spacing-x-large) 0;
 }
@@ -55,6 +60,12 @@ ul {
   list-style-type: none;
 }
 
+.appContainer {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--spacing-x-large);
+}
+
 .formSection {
   display: flex;
   flex-direction: column;
@@ -63,18 +74,8 @@ ul {
   margin: 0 0 var(--spacing-large) 0;
 }
 
-.formSecondRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-large);
-}
-
 .formSection > h2 {
   margin: 0;
-}
-
-.simulationSection__parameters {
-  margin: 0 0 var(--spacing-medium) 0;
 }
 
 .button {
@@ -90,8 +91,29 @@ ul {
   text-transform: uppercase;
 }
 
-.graph {
+.graphContainer {
   display: none;
-  padding-bottom: var(--spacing-medium);
+}
+
+.statResult {
+  font-weight: 700;
+}
+
+.graph {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  padding-top: var(--spacing-large);
+}
+
+.graph > li {
+  height: 50px;
+}
+
+.low {
   border-bottom: solid 2px var(--primary-text);
+}
+
+.high {
+  border-top: solid 2px var(--accent-color);
 }

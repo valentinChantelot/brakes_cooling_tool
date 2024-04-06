@@ -69,7 +69,8 @@ export function createAlgorithm() {
     }
 
     const { iterations, closingTime, openingTime } = actionData;
-    totalDuration = iterations * (openingTime + closingTime);
+    totalDuration =
+      iterations * (parseInt(openingTime) + parseInt(closingTime));
     openedDuration = iterations * openingTime;
     closedDuration = iterations * closingTime;
     return;
