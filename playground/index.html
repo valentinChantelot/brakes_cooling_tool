@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brakes Cooling Tool Playground</title>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Brakes Cooling Tool Playground</h1>
+
+      <form>
+        <section class="formSection">
+          <h2>Paramètres de température</h2>
+          <div>
+            <label for="temperature_level1">Premier palier :</label>
+            <input
+              type="number"
+              id="temperature_level1"
+              value="150"
+              data-js-selector="temperature_level1"
+            />
+          </div>
+          <div>
+            <label for="temperature_level1">Second palier :</label>
+            <input
+              type="number"
+              id="temperature_level2"
+              value="250"
+              data-js-selector="temperature_level2"
+            />
+          </div>
+        </section>
+
+        <div class="formSecondRow">
+          <section class="formSection">
+            <h2>Maintenir la température</h2>
+            <div>
+              <label for="maintain_iterations">Nombre d'itérations :</label>
+              <input
+                type="number"
+                id="maintain_iterations"
+                value="10"
+                data-js-selector="maintain_iterations"
+              />
+            </div>
+            <div>
+              <label for="maintain_openingTime">Temps d'ouverture (ms) :</label>
+              <input
+                type="number"
+                id="maintain_openingTime"
+                value="500"
+                data-js-selector="maintain_openingTime"
+              />
+            </div>
+            <div>
+              <label for="maintain_closingTime"
+                >Temps de fermeture (ms) :</label
+              >
+              <input
+                type="number"
+                id="maintain_closingTime"
+                value="1000"
+                data-js-selector="maintain_closingTime"
+              />
+            </div>
+          </section>
+
+          <section class="formSection">
+            <h2>Baisser la température</h2>
+            <div>
+              <label for="reduce_iterations">Nombre d'itérations :</label>
+              <input
+                type="number"
+                id="reduce_iterations"
+                value="10"
+                data-js-selector="reduce_iterations"
+              />
+            </div>
+            <div>
+              <label for="reduce_openingTime">Temps d'ouverture (ms) :</label>
+              <input
+                type="number"
+                id="reduce_openingTime"
+                value="1000"
+                data-js-selector="reduce_openingTime"
+              />
+            </div>
+            <div>
+              <label for="reduce_closingTime">Temps de fermeture (ms) :</label>
+              <input
+                type="number"
+                id="reduce_closingTime"
+                value="300"
+                data-js-selector="reduce_closingTime"
+              />
+            </div>
+          </section>
+        </div>
+      </form>
+
+      <section class="simulationSection">
+        <h2>Simulation</h2>
+        <div class="simulationSection__parameters">
+          <label for="temperature">Température d'entrée :</label>
+          <input
+            type="number"
+            id="temperature"
+            value="100"
+            data-js-selector="temperature"
+          />
+        </div>
+        <button class="button" data-js-selector="launchButton">
+          Lancer la simulation
+        </button>
+      </section>
+
+      <section data-js-selector="graph" class="graph"></section>
+    </main>
+
+    <script type="module" src="./js/index.js"></script>
+  </body>
+</html>

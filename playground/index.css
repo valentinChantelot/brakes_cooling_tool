@@ -1,0 +1,97 @@
+:root {
+  --background-color: #eae4d8;
+  --neutral-background-color: #f8f5f0;
+  --accent-color: #39b7f6;
+  --primary-text: #15141a;
+  --secondary-text: #5b5b66;
+
+  --font-size: 14px;
+  --border-radius: 4px;
+
+  --spacing-small: 4px;
+  --spacing-medium: 8px;
+  --spacing-large: 16px;
+  --spacing-x-large: 52px;
+}
+
+body {
+  font-family: "Courier New", monospace;
+  background-color: var(--background-color);
+  color: var(--primary-text);
+  font-size: var(--font-size);
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-x-large) var(--spacing-large);
+}
+
+h1 {
+  margin: 0 0 var(--spacing-x-large) 0;
+}
+
+h2 {
+  margin: 0 0 var(--spacing-medium) 0;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-large);
+
+  margin: 0 0 var(--spacing-x-large) 0;
+}
+
+label {
+  /* Getting all inputs aligned */
+  display: inline-block;
+  width: 220px;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-medium);
+
+  margin: 0 0 var(--spacing-large) 0;
+}
+
+.formSecondRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-large);
+}
+
+.formSection > h2 {
+  margin: 0;
+}
+
+.simulationSection__parameters {
+  margin: 0 0 var(--spacing-medium) 0;
+}
+
+.button {
+  padding: var(--spacing-medium) var(--spacing-large);
+
+  border: none;
+  border: solid 2px var(--primary-text);
+  background: none;
+  cursor: pointer;
+
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.graph {
+  display: none;
+  padding-bottom: var(--spacing-medium);
+  border-bottom: solid 2px var(--primary-text);
+}
