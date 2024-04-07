@@ -26,27 +26,52 @@ function onLoad() {
    */
   const algorithm = createAlgorithm();
   function _renderStats() {
-    const { totalDuration, openedDuration, closedDuration } =
-      algorithm.getStats();
+    const {
+      totalDuration,
+      openedDuration,
+      openedDurationPercentage,
+      closedDuration,
+      closedDurationPercentage,
+    } = algorithm.getStats();
 
     statResultTotal.innerHTML = "";
     statResultOpen.innerHTML = "";
     statResultClose.innerHTML = "";
 
     statResultTotal.innerText = totalDuration;
-    statResultOpen.innerText = openedDuration;
-    statResultClose.innerText = closedDuration;
+    statResultOpen.innerText = `${openedDuration} - ${openedDurationPercentage}%`;
+    statResultClose.innerText = `${closedDuration} - ${closedDurationPercentage}%`;
     return;
   }
 
   function _renderGraph() {
+    // reset graph
+    graph.innerHTML = "";
+    // reset animation
+    document.documentElement.style.setProperty(
+      "--dynamic-js-animation-name",
+      "none"
+    );
+    graph.offsetHeight;
+    document.documentElement.style.setProperty(
+      "--dynamic-js-animation-name",
+      "shrinkWidth"
+    );
+
     const results = algorithm.getResults();
+    const { totalDuration } = algorithm.getStats();
 
     results.forEach((r) => {
       const li = document.createElement("li");
       li.classList.add(r.state === "HIGH" ? "high" : "low");
+      li.style.width = `${(parseInt(r.duration) * 100) / totalDuration}%`;
       graph.appendChild(li);
     });
+
+    document.documentElement.style.setProperty(
+      "--dynamic-js-animation-duration",
+      `${totalDuration}ms`
+    );
 
     return;
   }

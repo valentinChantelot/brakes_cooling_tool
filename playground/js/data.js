@@ -47,17 +47,17 @@ export function getAlgorithmData() {
 
   function getReduceTemperatureParams() {
     return {
-      iterations: maintain_iterations.value,
-      openingTime: maintain_openingTime.value,
-      closingTime: maintain_closingTime.value,
+      iterations: reduce_iterations.value,
+      openingTime: reduce_openingTime.value,
+      closingTime: reduce_closingTime.value,
     };
   }
 
   function getMaintainTemperatureParams() {
     return {
-      iterations: reduce_iterations.value,
-      openingTime: reduce_openingTime.value,
-      closingTime: reduce_closingTime.value,
+      iterations: maintain_iterations.value,
+      openingTime: maintain_openingTime.value,
+      closingTime: maintain_closingTime.value,
     };
   }
 

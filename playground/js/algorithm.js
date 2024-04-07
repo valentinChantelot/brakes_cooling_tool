@@ -10,7 +10,9 @@ export function createAlgorithm() {
 
   let totalDuration = undefined;
   let openedDuration = undefined;
+  let openedDurationPercentage = undefined;
   let closedDuration = undefined;
+  let closedDurationPercentage = undefined;
 
   function _setTemperatureData() {
     temperatureEntry = data.getEntryTemperature();
@@ -20,13 +22,13 @@ export function createAlgorithm() {
 
   function _setActionData() {
     // Reduce temperature
-    if (temperatureEntry >= temperatureParams.secondLevel) {
+    if (parseInt(temperatureEntry) >= parseInt(temperatureParams.secondLevel)) {
       actionData = data.getReduceTemperatureParams();
       return;
     }
 
     // Maintain temperature
-    if (temperatureEntry >= temperatureParams.firstLevel) {
+    if (parseInt(temperatureEntry) >= parseInt(temperatureParams.firstLevel)) {
       actionData = data.getMaintainTemperatureParams();
       return;
     }
@@ -64,15 +66,33 @@ export function createAlgorithm() {
       // if there is no action, the stats are simple
       totalDuration = NO_ACTION_DELAY;
       openedDuration = 0;
+      openedDurationPercentage = 0;
       closedDuration = NO_ACTION_DELAY;
+      closedDurationPercentage = 100;
       return;
     }
 
-    const { iterations, closingTime, openingTime } = actionData;
-    totalDuration =
-      iterations * (parseInt(openingTime) + parseInt(closingTime));
-    openedDuration = iterations * openingTime;
-    closedDuration = iterations * closingTime;
+    totalDuration = 0;
+    openedDuration = 0;
+    openedDurationPercentage = 0;
+    closedDuration = 0;
+    closedDurationPercentage = 0;
+
+    sequence.forEach((r) => {
+      const intDuration = parseInt(r.duration);
+      totalDuration += intDuration;
+
+      if (r.state === "HIGH") {
+        openedDuration += intDuration;
+      }
+
+      if (r.state === "LOW") {
+        closedDuration += intDuration;
+      }
+    });
+
+    openedDurationPercentage = (openedDuration * 100) / totalDuration;
+    closedDurationPercentage = (closedDuration * 100) / totalDuration;
     return;
   }
 
@@ -89,7 +109,13 @@ export function createAlgorithm() {
   }
 
   function getStats() {
-    return { totalDuration, openedDuration, closedDuration };
+    return {
+      totalDuration,
+      openedDuration,
+      openedDurationPercentage: openedDurationPercentage.toFixed(2),
+      closedDuration,
+      closedDurationPercentage: closedDurationPercentage.toFixed(2),
+    };
   }
 
   return {

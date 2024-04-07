@@ -12,6 +12,9 @@
   --spacing-medium: 8px;
   --spacing-large: 16px;
   --spacing-x-large: 52px;
+
+  --dynamic-js-animation-duration: 3s;
+  --dynamic-js-animation-name: shrinkWidth;
 }
 
 body {
@@ -100,10 +103,24 @@ ul {
 }
 
 .graph {
-  display: grid;
-  grid-auto-columns: minmax(0, 1fr);
-  grid-auto-flow: column;
+  position: relative;
+  display: flex;
   padding-top: var(--spacing-large);
+}
+
+.graph::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--background-color);
+  width: 100%;
+  visibility: hidden;
+
+  animation-name: var(--dynamic-js-animation-name);
+  animation-duration: var(--dynamic-js-animation-duration);
+  animation-timing-function: linear;
 }
 
 .graph > li {
@@ -116,4 +133,14 @@ ul {
 
 .high {
   border-top: solid 2px var(--accent-color);
+}
+
+@keyframes shrinkWidth {
+  from {
+    width: 100%;
+    visibility: visible;
+  }
+  to {
+    width: 0%;
+  }
 }
