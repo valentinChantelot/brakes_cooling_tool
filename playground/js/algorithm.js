@@ -53,7 +53,7 @@ export function createAlgorithm() {
     }
 
     const { iterations, closingTime, openingTime } = actionData;
-    for (let i = 1; i < iterations; i++) {
+    for (let i = 0; i < iterations; i++) {
       _isOdd(i)
         ? sequence.push({ state: "HIGH", duration: openingTime })
         : sequence.push({ state: "LOW", duration: closingTime });
@@ -105,6 +105,7 @@ export function createAlgorithm() {
   }
 
   function getResults() {
+    console.log(sequence);
     return sequence;
   }
 
