@@ -1,11 +1,6 @@
 #include <SD.h>
-
 #include <SPI.h>
-
 #include <Wire.h>
-
-#include <RTClib.h>
-
 #include <max6675.h>
 
 /** Pin thermocouple 1 */
@@ -22,7 +17,7 @@
 #define SD_CHIP_SELECT 10
 #define RTC_SDA A4
 #define RTC_SCL A5
-RTC_DS1307 rtc;
+
 
 /** PIN OUT pilotage électrovane - Signal pilotage */
 #define RELAY1_PIN 8
@@ -35,16 +30,6 @@ MAX6675 thermocouple2(THERMOCOUPLE_2_SCK, THERMOCOUPLE_2_CS, THERMOCOUPLE_2_DO);
 /** Init écriture du fichier */
 File dataFile;
 char logFileName[32]; 
-
-void initRTC() {
-  rtc.begin();
-
-  if (!rtc.isrunning()) {
-    Serial.println("Le RTC ne fonctionne pas !");
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    Serial.println("RTC ajusté avec l'heure de compilation.");
-  }
-}
 
 bool initSD() {
   if (!SD.begin(10,11,12,13)) {
@@ -83,7 +68,7 @@ void createLogFileHeader() {
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
     dataFile.print("Temp1");
-    dataFile.print(",");
+    dataFile.print(";");
     dataFile.println("Temp2");
     dataFile.close();
   } else {
@@ -95,7 +80,7 @@ void logData(float temp1, float temp2) {
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
     dataFile.print(temp1, 2);
-    dataFile.print(",");
+    dataFile.print(";");
     dataFile.println(temp2, 2);
     dataFile.close();
   } else {
@@ -110,7 +95,6 @@ void setup() {
   pinMode(RELAY2_PIN, OUTPUT);
 
   Wire.begin();
-  initRTC();
 
   if (!initSD()) {
     Serial.println("Erreur SD, arrêt du setup.");
@@ -125,7 +109,6 @@ void setup() {
 }
 
 void loop() {
-  DateTime now = rtc.now();
   float temp1 = thermocouple1.readCelsius();
   float temp2 = thermocouple2.readCelsius();
 
