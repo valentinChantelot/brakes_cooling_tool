@@ -60,11 +60,6 @@ void createLogFile() {
   snprintf(logFileName, sizeof(logFileName),
   "LOG%02d%02d.CSV", now.hour(), now.minute());
 
-  // snprintf(logFileName, sizeof(logFileName),
-  //   "log_%04d-%02d-%02d_%02d-%02d-%02d.csv",
-  //   now.year(), now.month(), now.day(),
-  //   now.hour(), now.minute(), now.second());
-
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
     Serial.print("Fichier ");
@@ -77,10 +72,10 @@ void createLogFile() {
   }
 }
 
-void logHeader() {
+void createLogFileHeader() {
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
-    dataFile.println("Timestamp,Temp1,Temp2");
+    dataFile.println("Date,Heure,Temp1,Temp2");
     dataFile.close();
   } else {
     Serial.println("Impossible d'écrire les en-têtes dans le fichier !");
@@ -88,19 +83,35 @@ void logHeader() {
 }
 
 void logData(float temp1, float temp2) {
-    File dataFile = SD.open(logFileName, FILE_WRITE);
-    if (dataFile) {
-      DateTime now = rtc.now();
-      dataFile.print(now.timestamp()); // Timestamp ISO 8601 (ex: 2025-04-19T14:45:30)
-      dataFile.print(",");
-      dataFile.print(temp1);
-      dataFile.print(",");
-      dataFile.println(temp2);
-      dataFile.close();
-    } else {
-      Serial.print("Erreur d'ouverture du fichier : ");
-      Serial.println(logFileName);
-    }
+  File dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    DateTime now = rtc.now();
+    
+    // Écrit la date (ex: 2025-04-19)
+    dataFile.print(now.year());
+    dataFile.print("-");
+    dataFile.print(now.month());
+    dataFile.print("-");
+    dataFile.print(now.day());
+    dataFile.print(",");
+
+    // Écrit l'heure (ex: 14:45:30)
+    dataFile.print(now.hour());
+    dataFile.print(":");
+    dataFile.print(now.minute());
+    dataFile.print(":");
+    dataFile.print(now.second());
+    dataFile.print(",");
+
+    // Les températures
+    dataFile.println(temp1);
+    dataFile.println(temp2);
+
+    dataFile.close();
+  } else {
+    Serial.print("Erreur d'ouverture du fichier : ");
+    Serial.println(logFileName);
+  }
 }
 
 void setup() {
@@ -118,18 +129,7 @@ void setup() {
   }
 
   createLogFile(); 
-  File dataFile = SD.open(logFileName, FILE_WRITE);
-  if (dataFile) {
-    Serial.print("Fichier ");
-    Serial.print(logFileName);
-    Serial.println(" créé.");
-    dataFile.close();
-  } else {
-    Serial.print("Erreur lors de la création du fichier : ");
-    Serial.println(logFileName);
-  }
-
-  logHeader();
+  createLogFileHeader();
 
   Serial.println("Initialisation terminée. Système prêt.");
   delay(3000);
@@ -167,10 +167,10 @@ void loop() {
   Serial.print(",");
   Serial.print(temp1);
   Serial.print(",");
-  Serial.println(temp2); // Ajout du println pour bien séparer les lignes
+  Serial.println(temp2);
 
   logData(temp1, temp2);
 
-  delay(1000); // Enregistre les données toutes les secondes
+  delay(2000); 
 }
 
