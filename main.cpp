@@ -47,7 +47,7 @@ void initRTC() {
 }
 
 bool initSD() {
-  if (!SD.begin(10,11,12,)) {
+  if (!SD.begin(10,11,12,13)) {
     Serial.println("Échec de l'initialisation de la carte !");
     return false;
   }
@@ -87,14 +87,6 @@ void logHeader() {
   }
 }
 
-void generateLogFileName() {
-  DateTime now = rtc.now();
-  snprintf(logFileName, sizeof(logFileName),
-    "log_%04d%02d%02d_%02d%02d%02d.csv",
-    now.year(), now.month(), now.day(),
-    now.hour(), now.minute(), now.second());
-}
-
 void logData(float temp1, float temp2) {
     File dataFile = SD.open(logFileName, FILE_WRITE);
     if (dataFile) {
@@ -125,7 +117,7 @@ void setup() {
     return;
   }
 
-  generateLogFileName(); // Crée le nom du fichier avec la date/heure
+  createLogFile(); 
   File dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
     Serial.print("Fichier ");
