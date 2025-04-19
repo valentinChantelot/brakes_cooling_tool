@@ -56,9 +56,16 @@ bool initSD() {
 }
 
 void createLogFile() {
-  DateTime now = rtc.now();
-  snprintf(logFileName, sizeof(logFileName),
-  "LOG%02d%02d.CSV", now.hour(), now.minute());
+  int fileIndex = 1;
+
+  // Cherche un nom de fichier disponible
+  while (fileIndex < 100) { 
+    snprintf(logFileName, sizeof(logFileName), "data%d.csv", fileIndex);
+    if (!SD.exists(logFileName)) {
+      break;
+    }
+    fileIndex++;
+  }
 
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
@@ -75,7 +82,9 @@ void createLogFile() {
 void createLogFileHeader() {
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
-    dataFile.println("Date,Heure,Temp1,Temp2");
+    dataFile.print("Temp1");
+    dataFile.print(",");
+    dataFile.println("Temp2");
     dataFile.close();
   } else {
     Serial.println("Impossible d'écrire les en-têtes dans le fichier !");
@@ -83,37 +92,17 @@ void createLogFileHeader() {
 }
 
 void logData(float temp1, float temp2) {
-  File dataFile = SD.open(logFileName, FILE_WRITE);
+  dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
-    DateTime now = rtc.now();
-    
-    // Écrit la date (ex: 2025-04-19)
-    dataFile.print(now.year());
-    dataFile.print("-");
-    dataFile.print(now.month());
-    dataFile.print("-");
-    dataFile.print(now.day());
+    dataFile.print(temp1, 2);
     dataFile.print(",");
-
-    // Écrit l'heure (ex: 14:45:30)
-    dataFile.print(now.hour());
-    dataFile.print(":");
-    dataFile.print(now.minute());
-    dataFile.print(":");
-    dataFile.print(now.second());
-    dataFile.print(",");
-
-    // Les températures
-    dataFile.println(temp1);
-    dataFile.println(temp2);
-
+    dataFile.println(temp2, 2);
     dataFile.close();
   } else {
-    Serial.print("Erreur d'ouverture du fichier : ");
+    Serial.print("Erreur d’ouverture du fichier : ");
     Serial.println(logFileName);
   }
 }
-
 void setup() {
   Serial.begin(9600);
 
@@ -162,9 +151,7 @@ void loop() {
     digitalWrite(RELAY2_PIN, LOW);
   }
 
-  // Affichage dans la console
-  Serial.print(now.timestamp());
-  Serial.print(",");
+
   Serial.print(temp1);
   Serial.print(",");
   Serial.println(temp2);
