@@ -1,160 +1,184 @@
-#include <MAX6675.h>
-#include <Thread.h>
-/**
- * From library ArduinoThread by Ivan Seidel
- * To install it. Go here : https://github.com/ivanseidel/ArduinoThread/archive/master.zip
- * It will download a zip file
- * From Arduino IDE, Sketch > Include Library > Add .ZIP library
- * Select the downloaded zip file, then Sketch > Include Library > ArduinoThread to add it to the file
- * Remove StaticThreadController and ThreadController, we do not need these files
- */
+#include <SD.h>
 
-// constants
-const int SPEED = 9600;
+#include <SPI.h>
 
-const int SETUP_DELAY = 3000;
-const int LOOP_CONTROL_DELAY = 0; // How many time (in ms) between each controlRelay execution ?
-const int LOOP_LOG_DELAY = 1000;  // How many time (in ms) between each log ?
+#include <Wire.h>
 
-const int CONTROL_RELAY_NO_ACTION_DELAY = 1000;
+#include <RTClib.h>
 
-const int MAINTAIN_TEMP_HIGH_DELAY = 500;
-const int MAINTAIN_TEMP_LOW_DELAY = 1000;
-const int MAINTAIN_TEMP_NUMBER_OF_ITERATION = 10;
+#include <max6675.h>
 
-const int REDUCE_TEMP_HIGH_DELAY = 1000;
-const int REDUCE_TEMP_LOW_DELAY = 300;
-const int REDUCE_TEMP_NUMBER_OF_ITERATION = 10;
+/** Pin thermocouple 1 */
+#define THERMOCOUPLE_1_SCK 5
+#define THERMOCOUPLE_1_CS 6
+#define THERMOCOUPLE_1_DO 7
 
-const float MINIMUM_TRIGGER_TEMP = 50.0;
-const float MAXIMUM_TRIGGER_TEMP = 100.0;
+/** Pin thermocouple 2 */
+#define THERMOCOUPLE_2_SCK 2
+#define THERMOCOUPLE_2_CS 3
+#define THERMOCOUPLE_2_DO 4
 
-// pins for first thermocouple
-int PIN_1 = 11;
-int SO1_PIN = 22;
-int CS1_PIN = 2;
-int SCK1_PIN = 3;
+/** Config Shield datalogger - NE PAS TOUCHER, c'est tout dans la doc */
+#define SD_CHIP_SELECT 10
+#define RTC_SDA A4
+#define RTC_SCL A5
+RTC_DS1307 rtc;
 
-// // pins for 2nd thermocouple
-int PIN_2 = 10;
-int SO2_PIN = 24;
-int CS2_PIN = 4;
-int SCK2_PIN = 5;
+/** PIN OUT pilotage électrovane - Signal pilotage */
+#define RELAY1_PIN 8
+#define RELAY2_PIN 9
 
-// init thermocouples
-MAX6675 thermocouple1(SCK1_PIN, CS1_PIN, SO1_PIN);
-MAX6675 thermocouple2(SCK2_PIN, CS2_PIN, SO2_PIN);
+/** Init thermocouple */
+MAX6675 thermocouple1(THERMOCOUPLE_1_SCK, THERMOCOUPLE_1_CS, THERMOCOUPLE_1_DO);
+MAX6675 thermocouple2(THERMOCOUPLE_2_SCK, THERMOCOUPLE_2_CS, THERMOCOUPLE_2_DO);
 
-// init thermocouples thread (so the code for both is executed in parallel)
-Thread thermocouple1Thread;
-Thread thermocouple2Thread;
+/** Init écriture du fichier */
+File dataFile;
+char logFileName[32]; 
 
-// init logs thread (so the code for both is executed in parallel)
-Thread log_thermocouple1Thread;
-Thread log_thermocouple2Thread;
+void initRTC() {
+  rtc.begin();
 
-void setup()
-{
-  Serial.begin(SPEED);
-
-  pinMode(PIN_1, OUTPUT);
-  pinMode(PIN_2, OUTPUT);
-
-  // thread logic for 1rst thermocouple control
-  thermocouple1Thread.onRun([]
-                            {
-    float temp1 = thermocouple1.getTemperature();
-    controlRelay(PIN_1, temp1); });
-
-  // thread logic for 2nd thermocouple control
-  thermocouple2Thread.onRun([]
-                            {
-    float temp2 = thermocouple2.getTemperature();
-    controlRelay(PIN_2, temp2); });
-
-  // thread logic for 1rst thermocouple logs
-  log_thermocouple1Thread.onRun([]
-                                {
-    float temp1 = thermocouple1.getTemperature();
-    Serial.print("Temp_1 = ");
-    Serial.print(temp1); });
-
-  // thread logic for 2nd thermocouple logs
-  log_thermocouple2Thread.onRun([]
-                                {
-    float temp2 = thermocouple2.getTemperature();
-    Serial.print("Temp_2 = "); 
-    Serial.print(temp2); });
-
-  thermocouple1Thread.setInterval(LOOP_CONTROL_DELAY);
-  thermocouple2Thread.setInterval(LOOP_CONTROL_DELAY);
-
-  log_thermocouple1Thread.setInterval(LOOP_LOG_DELAY);
-  log_thermocouple2Thread.setInterval(LOOP_LOG_DELAY);
-
-  delay(SETUP_DELAY);
+  if (!rtc.isrunning()) {
+    Serial.println("Le RTC ne fonctionne pas !");
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    Serial.println("RTC ajusté avec l'heure de compilation.");
+  }
 }
 
-void loop()
-{
-  thermocouple1Thread.run();
-  thermocouple2Thread.run();
-
-  log_thermocouple1Thread.run();
-  log_thermocouple2Thread.run();
+bool initSD() {
+  if (!SD.begin(10,11,12,)) {
+    Serial.println("Échec de l'initialisation de la carte !");
+    return false;
+  }
+  Serial.println("Carte SD initialisée.");
+  return true;
 }
 
-void controlRelay(int pin, float temperature)
-{
-  // need a bit of piloting
-  if (temperature >= MINIMUM_TRIGGER_TEMP && temperature <= (MAXIMUM_TRIGGER_TEMP - 0.1))
-  {
-    maintainBrakesTemperature(pin);
+void createLogFile() {
+  DateTime now = rtc.now();
+  snprintf(logFileName, sizeof(logFileName),
+  "LOG%02d%02d.CSV", now.hour(), now.minute());
+
+  // snprintf(logFileName, sizeof(logFileName),
+  //   "log_%04d-%02d-%02d_%02d-%02d-%02d.csv",
+  //   now.year(), now.month(), now.day(),
+  //   now.hour(), now.minute(), now.second());
+
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    Serial.print("Fichier ");
+    Serial.print(logFileName);
+    Serial.println(" créé.");
+    dataFile.close();
+  } else {
+    Serial.print("Erreur lors de la création du fichier : ");
+    Serial.println(logFileName);
+  }
+}
+
+void logHeader() {
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    dataFile.println("Timestamp,Temp1,Temp2");
+    dataFile.close();
+  } else {
+    Serial.println("Impossible d'écrire les en-têtes dans le fichier !");
+  }
+}
+
+void generateLogFileName() {
+  DateTime now = rtc.now();
+  snprintf(logFileName, sizeof(logFileName),
+    "log_%04d%02d%02d_%02d%02d%02d.csv",
+    now.year(), now.month(), now.day(),
+    now.hour(), now.minute(), now.second());
+}
+
+void logData(float temp1, float temp2) {
+    File dataFile = SD.open(logFileName, FILE_WRITE);
+    if (dataFile) {
+      DateTime now = rtc.now();
+      dataFile.print(now.timestamp()); // Timestamp ISO 8601 (ex: 2025-04-19T14:45:30)
+      dataFile.print(",");
+      dataFile.print(temp1);
+      dataFile.print(",");
+      dataFile.println(temp2);
+      dataFile.close();
+    } else {
+      Serial.print("Erreur d'ouverture du fichier : ");
+      Serial.println(logFileName);
+    }
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+
+  Wire.begin();
+  initRTC();
+
+  if (!initSD()) {
+    Serial.println("Erreur SD, arrêt du setup.");
     return;
   }
 
-  // need a lot of piloting
-  if (temperature >= MAXIMUM_TRIGGER_TEMP)
-  {
-    reduceBrakesTemperature(pin);
-    return;
+  generateLogFileName(); // Crée le nom du fichier avec la date/heure
+  File dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    Serial.print("Fichier ");
+    Serial.print(logFileName);
+    Serial.println(" créé.");
+    dataFile.close();
+  } else {
+    Serial.print("Erreur lors de la création du fichier : ");
+    Serial.println(logFileName);
   }
 
-  // default behaviour - No piloting
-  noActionOnBrakesTemperature(pin);
-  return;
+  logHeader();
+
+  Serial.println("Initialisation terminée. Système prêt.");
+  delay(3000);
 }
 
-void noActionOnBrakesTemperature(int pin)
-{
-  digitalWrite(pin, LOW);
-  delay(CONTROL_RELAY_NO_ACTION_DELAY);
-}
+void loop() {
+  DateTime now = rtc.now();
+  float temp1 = thermocouple1.readCelsius();
+  float temp2 = thermocouple2.readCelsius();
 
-void maintainBrakesTemperature(int pin)
-{
-  for (int i = 0; i < MAINTAIN_TEMP_NUMBER_OF_ITERATION; ++i)
-  {
-    digitalWrite(pin, HIGH);
-    delay(MAINTAIN_TEMP_HIGH_DELAY);
-
-    digitalWrite(pin, LOW);
-    delay(MAINTAIN_TEMP_LOW_DELAY);
+  // Contrôle du relais 1 en fonction de la température de la thermocouple 1
+  if (temp1 > 350 && temp1 < 450) {
+    digitalWrite(RELAY1_PIN, HIGH);
+    delay(100);
+    digitalWrite(RELAY1_PIN, LOW);
+  } else if (temp1 > 450.01 && temp1 < 900.00) {
+    digitalWrite(RELAY1_PIN, HIGH);
+    delay(400);
+    digitalWrite(RELAY1_PIN, LOW);
   }
 
-  return;
-}
-
-void reduceBrakesTemperature(int pin)
-{
-  for (int i = 0; i < REDUCE_TEMP_NUMBER_OF_ITERATION; ++i)
-  {
-    digitalWrite(pin, HIGH);
-    delay(REDUCE_TEMP_HIGH_DELAY);
-
-    digitalWrite(pin, LOW);
-    delay(REDUCE_TEMP_LOW_DELAY);
+  // Contrôle du relais 2 en fonction de la température de la thermocouple 2
+  if (temp2 > 350 && temp2 < 450) {
+    digitalWrite(RELAY2_PIN, HIGH);
+    delay(100);
+    digitalWrite(RELAY2_PIN, LOW);
+  } else if (temp2 > 450.01 && temp2 < 900.00) {
+    digitalWrite(RELAY2_PIN, HIGH);
+    delay(400);
+    digitalWrite(RELAY2_PIN, LOW);
   }
 
-  return;
+  // Affichage dans la console
+  Serial.print(now.timestamp());
+  Serial.print(",");
+  Serial.print(temp1);
+  Serial.print(",");
+  Serial.println(temp2); // Ajout du println pour bien séparer les lignes
+
+  logData(temp1, temp2);
+
+  delay(1000); // Enregistre les données toutes les secondes
 }
+
