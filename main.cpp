@@ -40,6 +40,18 @@ bool initSD() {
   return true;
 }
 
+void createLogFileHeader() {
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    dataFile.print("Temp1");
+    dataFile.print(";");
+    dataFile.println("Temp2");
+    dataFile.close();
+  } else {
+    Serial.println("Impossible d'écrire les en-têtes dans le fichier !");
+  }
+}
+
 void createLogFile() {
   int fileIndex = 1;
 
@@ -64,18 +76,6 @@ void createLogFile() {
   }
 }
 
-void createLogFileHeader() {
-  dataFile = SD.open(logFileName, FILE_WRITE);
-  if (dataFile) {
-    dataFile.print("Temp1");
-    dataFile.print(";");
-    dataFile.println("Temp2");
-    dataFile.close();
-  } else {
-    Serial.println("Impossible d'écrire les en-têtes dans le fichier !");
-  }
-}
-
 void logData(float temp1, float temp2) {
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
@@ -88,6 +88,7 @@ void logData(float temp1, float temp2) {
     Serial.println(logFileName);
   }
 }
+
 void setup() {
   Serial.begin(9600);
 
@@ -136,10 +137,12 @@ void loop() {
 
 
   Serial.print(temp1);
-  Serial.print(",");
+  Serial.print(" , ");
   Serial.println(temp2);
 
-  logData(temp1, temp2);
+  if(temp1 > 80 || temp2 > 80) {
+    logData(temp1, temp2);
+  }
 
   delay(2000); 
 }
