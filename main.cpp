@@ -9,6 +9,7 @@
  * 
  */
 
+const float TEMPERATURE_START_LOGGING = 80.00;
 
 
 /**
@@ -109,6 +110,12 @@ void logData(float temp1, float temp2) {
   }
 }
 
+/**
+ * 
+ * LOGIC - APPLICATION
+ * 
+ */
+
 void setup() {
   Serial.begin(9600);
 
@@ -160,7 +167,7 @@ void loop() {
   Serial.print(" , ");
   Serial.println(temp2);
 
-  if(temp1 > 80 || temp2 > 80) {
+  if(temp1 > TEMPERATURE_START_LOGGING || temp2 > TEMPERATURE_START_LOGGING) {
     logData(temp1, temp2);
   }
 
