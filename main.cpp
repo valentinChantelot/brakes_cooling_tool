@@ -3,6 +3,20 @@
 #include <Wire.h>
 #include <max6675.h>
 
+/**
+ * 
+ * CONFIG - VARIABLES
+ * 
+ */
+
+
+
+/**
+ * 
+ * INITIALISATION
+ * 
+ */
+
 /** Pin thermocouple 1 */
 #define THERMOCOUPLE_1_SCK 5
 #define THERMOCOUPLE_1_CS 6
@@ -13,11 +27,6 @@
 #define THERMOCOUPLE_2_CS 3
 #define THERMOCOUPLE_2_DO 4
 
-/** Config Shield datalogger - NE PAS TOUCHER, c'est tout dans la doc */
-#define SD_CHIP_SELECT 10
-#define RTC_SDA A4
-#define RTC_SCL A5
-
 /** PIN OUT pilotage électrovane - Signal pilotage */
 #define RELAY1_PIN 8
 #define RELAY2_PIN 9
@@ -26,29 +35,28 @@
 MAX6675 thermocouple1(THERMOCOUPLE_1_SCK, THERMOCOUPLE_1_CS, THERMOCOUPLE_1_DO);
 MAX6675 thermocouple2(THERMOCOUPLE_2_SCK, THERMOCOUPLE_2_CS, THERMOCOUPLE_2_DO);
 
+/** Config Shield datalogger - NE PAS TOUCHER, c'est tout dans la doc */
+#define SD_CHIP_SELECT 10
+#define RTC_SDA A4
+#define RTC_SCL A5
+
 /** Init écriture du fichier */
 File dataFile;
 char logFileName[32]; 
 
+/**
+ * 
+ * FONCTIONS
+ * 
+ */
+
 bool initSD() {
   if (!SD.begin(10,11,12,13)) {
-    Serial.println("Échec de l'initialisation de la carte !");
+    Serial.println("⚠️ Échec de l'initialisation de la carte SD.");
     return false;
   }
-  Serial.println("Carte SD initialisée.");
+  Serial.println("✅ Carte SD initialisée.");
   return true;
-}
-
-void createLogFileHeader() {
-  dataFile = SD.open(logFileName, FILE_WRITE);
-  if (dataFile) {
-    dataFile.print("Temp1");
-    dataFile.print(";");
-    dataFile.println("Temp2");
-    dataFile.close();
-  } else {
-    Serial.println("Impossible d'écrire les en-têtes dans le fichier !");
-  }
 }
 
 void createLogFile() {
@@ -65,13 +73,26 @@ void createLogFile() {
 
   dataFile = SD.open(logFileName, FILE_WRITE);
   if (dataFile) {
-    Serial.print("Fichier ");
+    Serial.print("✅ Fichier ");
     Serial.print(logFileName);
     Serial.println(" créé.");
     dataFile.close();
   } else {
-    Serial.print("Erreur lors de la création du fichier : ");
+    Serial.print("⚠️ Échec de la création du fichier ");
     Serial.println(logFileName);
+  }
+}
+
+void createLogFileHeader() {
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    dataFile.print("Temp1");
+    dataFile.print(";");
+    dataFile.println("Temp2");
+    dataFile.close();
+    Serial.println("✅ Fichier de logs prêt");
+  } else {
+    Serial.println("⚠️ Impossible d'écrire les en-têtes dans le fichier de logs");
   }
 }
 
@@ -83,7 +104,7 @@ void logData(float temp1, float temp2) {
     dataFile.println(temp2, 2);
     dataFile.close();
   } else {
-    Serial.print("Erreur d’ouverture du fichier : ");
+    Serial.print("⚠️ Erreur d’ouverture du fichier ");
     Serial.println(logFileName);
   }
 }
@@ -97,14 +118,14 @@ void setup() {
   Wire.begin();
 
   if (!initSD()) {
-    Serial.println("Erreur SD, arrêt du setup.");
+    Serial.println("⚠️ Erreur lors de l'initialisation de la carte SD, arrêt de la phase de setup");
     return;
   }
 
   createLogFile(); 
   createLogFileHeader();
 
-  Serial.println("Initialisation terminée. Système prêt.");
+  Serial.println("✅ Initialisation terminée. Système prêt.");
   delay(3000);
 }
 
