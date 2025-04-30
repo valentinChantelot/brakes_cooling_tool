@@ -11,6 +11,10 @@
 
 const float TEMPERATURE_START_LOGGING = 80.00;
 
+const int MAINTAIN_TEMP_NUMBER_OF_ITERATION = 2;
+const int MAINTAIN_TEMP_TIME_OPEN = 500;
+const int MAINTAIN_TEMP_TIME_CLOSED = 1000;
+
 
 /**
  * 
@@ -171,6 +175,6 @@ void loop() {
     logData(temp1, temp2);
   }
 
-  delay(2000); 
+  delay(1000); 
 }
 
