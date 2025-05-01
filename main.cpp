@@ -12,9 +12,18 @@
 const float TEMPERATURE_START_LOGGING = 80.00;
 
 const int MAINTAIN_TEMP_NUMBER_OF_ITERATION = 2;
-const int MAINTAIN_TEMP_TIME_OPEN = 500;
-const int MAINTAIN_TEMP_TIME_CLOSED = 1000;
+const int MAINTAIN_TEMP_DURATION_OPEN = 500; // ms
+const int MAINTAIN_TEMP_DURATION_CLOSED = 1000; // ms
+const int MAINTAIN_TEMP_MIN = 350 // °C
 
+const int LOWER_TEMP_NUMBER_OF_ITERATION = 2;
+const int LOWER_TEMP_DURATION_OPEN = 500; // ms
+const int LOWER_TEMP_DURATION_CLOSED = 1000; // msw
+const int LOWER_TEMP_MIN = 400 // °C
+
+const int ALWAYS_OPEN_NUMBER_OF_ITERATION = 2;
+const int ALWAYS_OPEN_DURATION_OF_ITERATION = 2000; // ms
+const int ALWAYS_OPEN_MIN = 500 // °C
 
 /**
  * 
@@ -144,6 +153,14 @@ void loop() {
   float temp1 = thermocouple1.readCelsius();
   float temp2 = thermocouple2.readCelsius();
 
+  if(temp1 > TEMPERATURE_START_LOGGING || temp2 > TEMPERATURE_START_LOGGING) {
+    logData(temp1, temp2);
+  }
+
+  Serial.print(temp1);
+  Serial.print(" , ");
+  Serial.println(temp2);
+
   // Contrôle du relais 1 en fonction de la température de la thermocouple 1
   if (temp1 > 350 && temp1 < 450) {
     digitalWrite(RELAY1_PIN, HIGH);
@@ -165,16 +182,5 @@ void loop() {
     delay(400);
     digitalWrite(RELAY2_PIN, LOW);
   }
-
-
-  Serial.print(temp1);
-  Serial.print(" , ");
-  Serial.println(temp2);
-
-  if(temp1 > TEMPERATURE_START_LOGGING || temp2 > TEMPERATURE_START_LOGGING) {
-    logData(temp1, temp2);
-  }
-
-  delay(1000); 
 }
 
