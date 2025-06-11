@@ -162,22 +162,22 @@ void loop() {
   Serial.println(temp2);
 
   // Contrôle du relais 1 en fonction de la température de la thermocouple 1
-  if (temp1 > 350 && temp1 < 450) {
+  if (temp1 > 250 && temp1 < 300) {
     digitalWrite(RELAY1_PIN, HIGH);
     delay(100);
     digitalWrite(RELAY1_PIN, LOW);
-  } else if (temp1 > 450.01 && temp1 < 900.00) {
+  } else if (temp1 > 300.01 && temp1 < 900.00) {
     digitalWrite(RELAY1_PIN, HIGH);
     delay(400);
     digitalWrite(RELAY1_PIN, LOW);
   }
 
   // Contrôle du relais 2 en fonction de la température de la thermocouple 2
-  if (temp2 > 350 && temp2 < 450) {
+  if (temp2 > 250 && temp2 < 300) {
     digitalWrite(RELAY2_PIN, HIGH);
     delay(100);
     digitalWrite(RELAY2_PIN, LOW);
-  } else if (temp2 > 450.01 && temp2 < 900.00) {
+  } else if (temp2 > 300.01 && temp2 < 900.00) {
     digitalWrite(RELAY2_PIN, HIGH);
     delay(400);
     digitalWrite(RELAY2_PIN, LOW);
