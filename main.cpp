@@ -32,14 +32,14 @@ const int ALWAYS_OPEN_MIN = 500 // °C
  */
 
 /** Pin thermocouple 1 */
-#define THERMOCOUPLE_1_SCK 5
+#define THERMOCOUPLE_1_SCK 7
 #define THERMOCOUPLE_1_CS 6
-#define THERMOCOUPLE_1_DO 7
+#define THERMOCOUPLE_1_DO 5
 
 /** Pin thermocouple 2 */
-#define THERMOCOUPLE_2_SCK 2
+#define THERMOCOUPLE_2_SCK 4
 #define THERMOCOUPLE_2_CS 3
-#define THERMOCOUPLE_2_DO 4
+#define THERMOCOUPLE_2_DO 2
 
 /** PIN OUT pilotage électrovane - Signal pilotage */
 #define RELAY1_PIN 8
