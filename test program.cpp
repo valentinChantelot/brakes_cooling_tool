@@ -1,0 +1,178 @@
+#include <SD.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <max6675.h>
+
+/**
+ * 
+ * CONFIG - VARIABLES
+ * 
+ */
+
+const float TEMPERATURE_START_LOGGING = 80.00;
+
+const int MAINTAIN_TEMP_NUMBER_OF_ITERATION = 2;
+const int MAINTAIN_TEMP_DURATION_OPEN = 500; // ms
+const int MAINTAIN_TEMP_DURATION_CLOSED = 1000; // ms
+const int MAINTAIN_TEMP_MIN = 350; // °C
+
+const int LOWER_TEMP_NUMBER_OF_ITERATION = 2;
+const int LOWER_TEMP_DURATION_OPEN = 500; // ms
+const int LOWER_TEMP_DURATION_CLOSED = 1000; // msw
+const int LOWER_TEMP_MIN = 400; // °C
+
+const int ALWAYS_OPEN_NUMBER_OF_ITERATION = 2;
+const int ALWAYS_OPEN_DURATION_OF_ITERATION = 2000; // ms
+const int ALWAYS_OPEN_MIN = 500 // °C
+
+/**
+ * 
+ * INITIALISATION
+ * 
+ */
+
+/** Pin thermocouple 1 */
+#define THERMOCOUPLE_1_SCK 7
+#define THERMOCOUPLE_1_CS 6
+#define THERMOCOUPLE_1_DO 5
+
+/** Pin thermocouple 2 */
+#define THERMOCOUPLE_2_SCK 4
+#define THERMOCOUPLE_2_CS 3
+#define THERMOCOUPLE_2_DO 2
+
+/** PIN OUT pilotage électrovane - Signal pilotage */
+#define RELAY1_PIN 8
+#define RELAY2_PIN 9
+
+/** Init thermocouple */
+;MAX6675 thermocouple1(THERMOCOUPLE_1_SCK, THERMOCOUPLE_1_CS, THERMOCOUPLE_1_DO);
+MAX6675 thermocouple2(THERMOCOUPLE_2_SCK, THERMOCOUPLE_2_CS, THERMOCOUPLE_2_DO);
+
+/** Config Shield datalogger - NE PAS TOUCHER, c'est tout dans la doc */
+#define SD_CHIP_SELECT 10
+#define RTC_SDA A4
+#define RTC_SCL A5
+
+/** Init écriture du fichier */
+File dataFile;
+char logFileName[32]; 
+
+/**
+ * 
+ * FONCTIONS
+ * 
+ */
+
+bool initSD() {
+  if (!SD.begin(10,11,12,13)) {
+    Serial.println("⚠️ Échec de l'initialisation de la carte SD.");
+    return false;
+  }
+  Serial.println("✅ Carte SD initialisée.");
+  return true;
+}
+
+void createLogFile() {
+  int fileIndex = 1;
+
+  // Cherche un nom de fichier disponible
+  while (fileIndex < 100) { 
+    snprintf(logFileName, sizeof(logFileName), "data%d.csv", fileIndex);
+    if (!SD.exists(logFileName)) {
+      break;
+    }
+    fileIndex++;
+  }
+
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    Serial.print("✅ Fichier ");
+    Serial.print(logFileName);
+    Serial.println(" créé.");
+    dataFile.close();
+  } else {
+    Serial.print("⚠️ Échec de la création du fichier ");
+    Serial.println(logFileName);
+  }
+}
+
+void createLogFileHeader() {
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    dataFile.print("Temp1");
+    dataFile.print(";");
+    dataFile.println("Temp2");
+    dataFile.close();
+    Serial.println("✅ Fichier de logs prêt");
+  } else {
+    Serial.println("⚠️ Impossible d'écrire les en-têtes dans le fichier de logs");
+  }
+}
+
+void logData(float temp1, float temp2) {
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    dataFile.print(temp1, 2);
+    dataFile.print(";");
+    dataFile.println(temp2, 2);
+    dataFile.close();
+  } else {
+    Serial.print("⚠️ Erreur d’ouverture du fichier ");
+    Serial.println(logFileName);
+  }
+}
+
+/**
+ * 
+ * LOGIC - APPLICATION
+ * 
+ */
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+
+  Wire.begin();
+
+  if (!initSD()) {
+    Serial.println("⚠️ Erreur lors de l'initialisation de la carte SD, arrêt de la phase de setup");
+    return;
+  }
+
+  createLogFile(); 
+  createLogFileHeader();
+
+  Serial.println("✅ Initialisation terminée. Système prêt.");
+  delay(3000);
+}
+
+void loop() {
+  float temp1 = thermocouple1.readCelsius();
+  float temp2 = thermocouple2.readCelsius();
+
+  if(temp1 > TEMPERATURE_START_LOGGING || temp2 > TEMPERATURE_START_LOGGING) {
+    logData(temp1, temp2);
+  }
+
+  Serial.print(temp1);
+  Serial.print(" , ");
+  Serial.println(temp2);
+
+  // Contrôle du relais 1 en fonction de la température de la thermocouple 1
+  if (temp1 > 10 && temp1 < 1000) {
+    digitalWrite(RELAY1_PIN, HIGH);
+    delay(10000);
+    digitalWrite(RELAY1_PIN, LOW);
+  } 
+
+  // Contrôle du relais 2 en fonction de la température de la thermocouple 2
+  if (temp2 > 10 && temp2 < 1000) {
+    digitalWrite(RELAY2_PIN, HIGH);
+    delay(10000);
+    digitalWrite(RELAY2_PIN, LOW);
+  } 
+}
+
