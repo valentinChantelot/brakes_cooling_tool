@@ -1,0 +1,192 @@
+#include <SD.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <max6675.h>
+
+/**
+ * CONFIG - VARIABLES
+ */
+const float TEMPERATURE_START_LOGGING = 80.00;
+
+/** Pin thermocouple 1 */
+#define THERMOCOUPLE_1_SCK 7
+#define THERMOCOUPLE_1_CS 6
+#define THERMOCOUPLE_1_DO 5
+
+/** Pin thermocouple 2 */
+#define THERMOCOUPLE_2_SCK 4
+#define THERMOCOUPLE_2_CS 3
+#define THERMOCOUPLE_2_DO 2
+
+/** PIN OUT relais */
+#define RELAY1_PIN 8
+#define RELAY2_PIN 9
+
+/** Init thermocouples */
+MAX6675 thermocouple1(THERMOCOUPLE_1_SCK, THERMOCOUPLE_1_CS, THERMOCOUPLE_1_DO);
+MAX6675 thermocouple2(THERMOCOUPLE_2_SCK, THERMOCOUPLE_2_CS, THERMOCOUPLE_2_DO);
+
+/** Config Shield datalogger */
+#define SD_CHIP_SELECT 10
+#define RTC_SDA A4
+#define RTC_SCL A5
+
+/** Init écriture du fichier */
+File dataFile;
+char logFileName[32]; 
+
+/**
+ * FONCTIONS
+ */
+bool initSD() {
+  if (!SD.begin(SD_CHIP_SELECT)) {
+    Serial.println("⚠️ Échec de l'initialisation de la carte SD.");
+    return false;
+  }
+  Serial.println("✅ Carte SD initialisée.");
+  return true;
+}
+
+void createLogFile() {
+  int fileIndex = 1;
+  while (fileIndex < 100) { 
+    snprintf(logFileName, sizeof(logFileName), "data%d.csv", fileIndex);
+    if (!SD.exists(logFileName)) {
+      break;
+    }
+    fileIndex++;
+  }
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    Serial.print("✅ Fichier ");
+    Serial.print(logFileName);
+    Serial.println(" créé.");
+    dataFile.close();
+  } else {
+    Serial.print("⚠️ Échec de la création du fichier ");
+    Serial.println(logFileName);
+  }
+}
+
+void createLogFileHeader() {
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    dataFile.println("Temp1;Temp2");
+    dataFile.close();
+    Serial.println("✅ Fichier de logs prêt");
+  } else {
+    Serial.println("⚠️ Impossible d'écrire les en-têtes");
+  }
+}
+
+void logData(float temp1, float temp2) {
+  dataFile = SD.open(logFileName, FILE_WRITE);
+  if (dataFile) {
+    dataFile.print(temp1, 2);
+    dataFile.print(";");
+    dataFile.println(temp2, 2);
+    dataFile.close();
+  } else {
+    Serial.print("⚠️ Erreur d’ouverture du fichier ");
+    Serial.println(logFileName);
+  }
+}
+
+/**
+ * LOGIC - APPLICATION
+ */
+
+// --- Variables pour le pilotage non bloquant des relais
+unsigned long previousMillis = 0;
+const unsigned long interval = 500; // 0,5 seconde
+
+enum Phase { RELAY1_ACTIVE, PAUSE, RELAY2_ACTIVE };
+Phase currentPhase = RELAY1_ACTIVE;
+
+unsigned long phaseStartMillis = 0;
+bool relayState = false; // ON/OFF des relais
+int blinkCount = 0;
+
+void setup() {
+  Serial.begin(9600);
+
+  pinMode(RELAY1_PIN, OUTPUT);
+  pinMode(RELAY2_PIN, OUTPUT);
+
+  digitalWrite(RELAY1_PIN, LOW);
+  digitalWrite(RELAY2_PIN, LOW);
+
+  Wire.begin();
+
+  if (!initSD()) {
+    Serial.println("⚠️ Erreur SD");
+    return;
+  }
+
+  createLogFile(); 
+  createLogFileHeader();
+
+  Serial.println("✅ Initialisation terminée. Système prêt.");
+  delay(2000);
+}
+
+void loop() {
+  unsigned long currentMillis = millis();
+
+  // --- Lecture températures
+  float temp1 = thermocouple1.readCelsius();
+  float temp2 = thermocouple2.readCelsius();
+
+  if(temp1 > TEMPERATURE_START_LOGGING || temp2 > TEMPERATURE_START_LOGGING) {
+    logData(temp1, temp2);
+  }
+
+  Serial.print(temp1);
+  Serial.print(" , ");
+  Serial.println(temp2);
+
+  // --- Pilotage relais selon la phase
+  switch (currentPhase) {
+
+    case RELAY1_ACTIVE:
+      if (currentMillis - previousMillis >= interval) {
+        previousMillis = currentMillis;
+        relayState = !relayState;
+        digitalWrite(RELAY1_PIN, relayState);
+        blinkCount++;
+
+        if (blinkCount >= (10000 / interval)) { // 10 sec
+          digitalWrite(RELAY1_PIN, LOW);
+          blinkCount = 0;
+          currentPhase = PAUSE;
+          phaseStartMillis = currentMillis;
+        }
+      }
+      break;
+
+    case PAUSE:
+      if (currentMillis - phaseStartMillis >= 3000) { // 3 sec pause
+        currentPhase = RELAY2_ACTIVE;
+        previousMillis = currentMillis;
+        relayState = false;
+        blinkCount = 0;
+      }
+      break;
+
+    case RELAY2_ACTIVE:
+      if (currentMillis - previousMillis >= interval) {
+        previousMillis = currentMillis;
+        relayState = !relayState;
+        digitalWrite(RELAY2_PIN, relayState);
+        blinkCount++;
+
+        if (blinkCount >= (10000 / interval)) { // 10 sec
+          digitalWrite(RELAY2_PIN, LOW);
+          blinkCount = 0;
+          currentPhase = RELAY1_ACTIVE;
+          previousMillis = currentMillis;
+        }
+      }
+      break;
+  }
+}
