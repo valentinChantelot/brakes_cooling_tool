@@ -6,7 +6,7 @@
 /**
  * CONFIG - VARIABLES
  */
-const float TEMPERATURE_START_LOGGING = 80.00;
+const float TEMPERATURE_START_LOGGING = 20.00;
 
 /** Pin thermocouple 1 */
 #define THERMOCOUPLE_1_SCK 7
